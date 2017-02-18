@@ -1,5 +1,6 @@
 package com.mastertechsoftware.mvpframework
 
+import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.support.annotation.DrawableRes
 import android.support.annotation.MenuRes
@@ -14,6 +15,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 
+
 /**
  * Class for dealing with toolbar
  */
@@ -22,9 +24,13 @@ open class ToolbarManager(val toolbar: Toolbar, val presenter: Presenter, val na
         Toolbar.OnMenuItemClickListener, View.OnClickListener, NavigationView.OnNavigationItemSelectedListener {
     var navState = NavState.CLOSED
     var homeState = HomeState.HAMBURGER
+    val drawerArrowDrawable = DrawerArrowDrawable(presenter.activity)
 
     init {
-        toolbar.setNavigationIcon(DrawerArrowDrawable(presenter.activity))
+        drawerArrowDrawable.color = Color.WHITE
+        drawerArrowDrawable.isSpinEnabled = true
+        toolbar.setNavigationIcon(drawerArrowDrawable)
+//        toolbar.setNavigationIcon(navigationIcon)
         toolbar.setOnMenuItemClickListener(this)
         navigationView.setNavigationItemSelectedListener(this)
         toolbar.setNavigationOnClickListener(this)
@@ -58,8 +64,12 @@ open class ToolbarManager(val toolbar: Toolbar, val presenter: Presenter, val na
 
     fun setBackButton(on: Boolean) {
         if (on) {
+            drawerArrowDrawable.progress = 1.0f
+//            toolbar.setNavigationIcon(drawerArrowDrawable)
             homeState = HomeState.BACK
         } else {
+            drawerArrowDrawable.progress = 0.0f
+//            toolbar.setNavigationIcon(drawerArrowDrawable)
             homeState = HomeState.HAMBURGER
         }
     }
@@ -97,4 +107,5 @@ open class ToolbarManager(val toolbar: Toolbar, val presenter: Presenter, val na
         CLOSED,
         OPEN
     }
+
 }

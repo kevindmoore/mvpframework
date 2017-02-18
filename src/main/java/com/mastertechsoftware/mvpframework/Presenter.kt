@@ -159,6 +159,9 @@ open class Presenter(var activity: Activity) : Application.ActivityLifecycleCall
         if (mvpView.view == null) {
             throw IllegalArgumentException("Could not inflate view")
         }
+        if (mvpView.transitionAnimation != null) {
+            mvpView.view?.startAnimation(mvpView.transitionAnimation)
+        }
         frameLayout.addView(mvpView.view, getFrameLayoutParams())
         currentView = mvpView
     }
