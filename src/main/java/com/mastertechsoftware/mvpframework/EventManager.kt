@@ -86,7 +86,8 @@ open class EventManager {
     fun unregister(channel: Channel, subscriber: Any) {
         var bus = channelMap.get(channel)
         if (bus == null) {
-            throw IllegalArgumentException("Bus not found for ${channel}")
+            bus = EventBus()
+            channelMap.put(channel, bus)
         }
         bus.unregister(subscriber)
     }
@@ -98,7 +99,8 @@ open class EventManager {
     fun post(event: Any) {
         var bus = channelMap.get(defaultChannel)
         if (bus == null) {
-            throw IllegalArgumentException("Bus not found for ${defaultChannel}")
+            bus = EventBus()
+            channelMap.put(defaultChannel, bus)
         }
         bus.post(event)
     }
@@ -112,7 +114,8 @@ open class EventManager {
     fun post(channel: Channel, event: Any) {
         var bus = channelMap.get(channel)
         if (bus == null) {
-            throw IllegalArgumentException("Bus not found for ${channel}")
+            bus = EventBus()
+            channelMap.put(channel, bus)
         }
         bus.post(event)
     }
@@ -124,7 +127,8 @@ open class EventManager {
     fun postSticky(event: Any) {
         var bus = channelMap.get(defaultChannel)
         if (bus == null) {
-            throw IllegalArgumentException("Bus not found for ${defaultChannel}")
+            bus = EventBus()
+            channelMap.put(defaultChannel, bus)
         }
         bus.postSticky(event)
     }
@@ -137,7 +141,8 @@ open class EventManager {
     fun postSticky(channel: Channel, event: Any) {
         var bus = channelMap.get(channel)
         if (bus == null) {
-            throw IllegalArgumentException("Bus not found for ${channel}")
+            bus = EventBus()
+            channelMap.put(channel, bus)
         }
         bus.postSticky(event)
     }

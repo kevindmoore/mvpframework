@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.support.annotation.DrawableRes
 import android.support.annotation.LayoutRes
 import android.support.annotation.MenuRes
+import android.support.design.widget.AppBarLayout
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.NavigationView
 import android.support.v4.widget.DrawerLayout
@@ -18,14 +19,19 @@ import android.widget.FrameLayout
 import com.mastertechsoftware.logging.Logger
 import com.mastertechsoftware.logging.json.JSONData
 import com.mastertechsoftware.logging.json.JSONDataException
+import java.lang.Class
+import java.lang.ClassNotFoundException
+import java.lang.Exception
+import java.lang.IllegalAccessException
+import java.lang.InstantiationException
 import java.util.*
+import kotlin.IllegalArgumentException
 
 /**
  * Handle Presentation of Views
  */
 open class Presenter(var activity: Activity) : Application.ActivityLifecycleCallbacks {
     lateinit var toolbarManager : ToolbarManager
-//    lateinit var navDrawerManager : NavDrawerManager
     lateinit var topLevelLayout : ViewGroup
     lateinit var frameLayout : FrameLayout
     var views = Stack<MVPView>()
@@ -33,6 +39,9 @@ open class Presenter(var activity: Activity) : Application.ActivityLifecycleCall
     var layoutInflater : LayoutInflater
     var menuInflater : MenuInflater
     protected var currentView: MVPView? = null
+    protected var showDebugging = true
+    protected var resumeCalled = false
+    protected var currentAndroidView : View? = null
 
     init {
         activity.application.registerActivityLifecycleCallbacks(this)
@@ -51,17 +60,21 @@ open class Presenter(var activity: Activity) : Application.ActivityLifecycleCall
      * Activity should call this once the layout has been loaded.
      */
     fun setLayout(topLayout: ViewGroup) {
+        if (showDebugging) {
+            Logger.debug("setLayout")
+        }
         topLevelLayout = topLayout
         frameLayout = topLayout.findViewById(R.id.frameLayout) as FrameLayout
+        val appBarLayout  = topLayout.findViewById(R.id.appBarLayout) as AppBarLayout
         toolbarManager = ToolbarManager(topLayout.findViewById(R.id.toolbar) as Toolbar, this,
                 topLayout.findViewById(R.id.nav_view) as NavigationView,
-                topLayout.findViewById(R.id.drawer_layout) as DrawerLayout)
-//        navDrawerManager = NavDrawerManager(activity, topLayout.findViewById(R.id.nav_view) as NavigationView,
-//                topLayout.findViewById(R.id.drawer_layout) as DrawerLayout,
-//                toolbarManager.toolbar, this)
+                topLayout.findViewById(R.id.drawer_layout) as DrawerLayout, appBarLayout)
     }
 
     fun shutDown() {
+        if (showDebugging) {
+            Logger.debug("shutDown")
+        }
         activity.application.unregisterActivityLifecycleCallbacks(this)
     }
 
@@ -82,12 +95,14 @@ open class Presenter(var activity: Activity) : Application.ActivityLifecycleCall
     /**
      * Load a view from the given view model
      */
-    fun loadView(viewModel: ViewModel) : MVPView? {
+    fun createMVPView(viewModel: ViewModel) : MVPView? {
+        if (showDebugging) {
+            Logger.debug("createMVPView")
+        }
         try {
             val viewClass = viewModel.viewType
             val mvpView = viewClass?.newInstance()
             viewModel.mvpView = mvpView
-            mvpView?.view = inflateLayout(viewModel.viewResourceId)
             return mvpView
         } catch (e : InstantiationException ) {
             Logger.error("Problems creating view of type " + viewModel.viewType?.getName(), e);
@@ -95,6 +110,16 @@ open class Presenter(var activity: Activity) : Application.ActivityLifecycleCall
             Logger.error("Problems creating view of type " + viewModel.viewType?.getName(), e);
         }
         return null
+    }
+
+    /**
+     * Load an Android View
+     */
+    fun loadView(mvpView: MVPView?, viewModel: ViewModel) {
+        if (showDebugging) {
+            Logger.debug("loadView ${mvpView}")
+        }
+        mvpView?.setupView(inflateLayout(viewModel.viewResourceId))
     }
 
     /**
@@ -110,6 +135,9 @@ open class Presenter(var activity: Activity) : Application.ActivityLifecycleCall
      * Show/Hide Fab
      */
     fun showFAB(show: Boolean) {
+        if (showDebugging) {
+            Logger.debug("showFAB ${show}")
+        }
         topLevelLayout.findViewById(R.id.fab).visibility = if (show) View.VISIBLE else View.GONE
     }
 
@@ -120,6 +148,10 @@ open class Presenter(var activity: Activity) : Application.ActivityLifecycleCall
         (topLevelLayout.findViewById(R.id.fab) as FloatingActionButton).setImageDrawable(drawable)
     }
 
+    fun setFABDrawable(@DrawableRes id: Int) {
+        (topLevelLayout.findViewById(R.id.fab) as FloatingActionButton).setImageResource(id)
+    }
+
     /**
      * Set the click listener for the fab
      */
@@ -128,22 +160,50 @@ open class Presenter(var activity: Activity) : Application.ActivityLifecycleCall
     }
 
     /**
+     * Clear the Toolbar menu
+     */
+    fun clearMenu() {
+        if (showDebugging) {
+            Logger.debug("clearMenu")
+        }
+        toolbarManager.clearMenu()
+    }
+
+    /**
+     * Set the Right Toolbar Menu
+     */
+    fun setMenu(@MenuRes menuId: Int) {
+        if (showDebugging) {
+            Logger.debug("setMenu ${menuId}")
+        }
+        toolbarManager.setMenu(menuId)
+    }
+
+    /**
      * Load the given view and add it to our layout
      */
-    fun showView(viewModel: ViewModel) : MVPView? {
-        val view = loadView(viewModel)
-        view?.let {
-            addViewToLayout(view)
+    fun showView(viewModel: ViewModel, data : Any?) : MVPView? {
+        if (showDebugging) {
+            Logger.debug("showView ${viewModel}")
         }
-        return view
+        val mvpView = createMVPView(viewModel)
+        loadView(mvpView, viewModel)
+        mvpView?.bindView(data)
+        if (mvpView != null) {
+            addViewToLayout(mvpView, true)
+        }
+        return mvpView
     }
 
     /**
      * Add the view to the main layout
      * @param view
      */
-    fun addViewToLayout(view: MVPView) {
-        replaceView(view)
+    fun addViewToLayout(view: MVPView, finishLoading: Boolean) {
+        if (showDebugging) {
+            Logger.debug("addViewToLayout  ${view}")
+        }
+        replaceView(view, finishLoading)
         views.add(view)
     }
 
@@ -151,8 +211,19 @@ open class Presenter(var activity: Activity) : Application.ActivityLifecycleCall
      * Replace whatever view is showing with the given view
      * @param view
      */
-    fun replaceView(mvpView: MVPView) {
-        frameLayout.removeAllViews()
+    fun replaceView(mvpView: MVPView, finishLoading: Boolean) {
+        if (showDebugging) {
+            Logger.debug("replaceView ${mvpView}")
+        }
+        if (currentAndroidView == mvpView.view) {
+            Logger.error("${mvpView.view} already added")
+            return
+        }
+        try {
+            frameLayout.removeAllViews()
+        } catch (e : Exception) {
+            Logger.error("Problems Removing All Views ${e.message}")
+        }
         if (mvpView.view == null && mvpView.viewModel != null) {
             mvpView.view = inflateLayout(mvpView.viewModel!!.viewResourceId)
         }
@@ -163,7 +234,30 @@ open class Presenter(var activity: Activity) : Application.ActivityLifecycleCall
             mvpView.view?.startAnimation(mvpView.transitionAnimation)
         }
         frameLayout.addView(mvpView.view, getFrameLayoutParams())
+        currentAndroidView = mvpView.view
         currentView = mvpView
+        if (finishLoading) {
+            finishLoading()
+        }
+    }
+
+    /**
+     * Check to see if the current view is the same as this one
+     */
+    fun isCurrentView(view : MVPView?) : Boolean {
+        return view == currentView
+    }
+
+    /**
+     * We've finished loading the view, now
+     * call the view's onViewLoaded and onResume
+     */
+    fun finishLoading() {
+        if (showDebugging) {
+            Logger.debug("finishLoading ${currentView}")
+        }
+        currentView?.onResume()
+        resumeCalled = true
     }
 
 
@@ -215,13 +309,19 @@ open class Presenter(var activity: Activity) : Application.ActivityLifecycleCall
      * Handle Activity result
      */
     fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) : Boolean {
+        if (showDebugging) {
+            Logger.debug("onActivityResult ${requestCode} ${resultCode}")
+        }
         return currentView?.onActivityResult(requestCode, resultCode, data) ?: false
     }
 
     /**
      * Handle toolbar menu item
      */
-    fun onMenuClicked(menuItem: MenuItem?) : Boolean {
+    fun onMenuClicked(menuItem: MenuItem) : Boolean {
+        if (showDebugging) {
+            Logger.debug("onMenuClicked ${menuItem}")
+        }
         return currentView?.onMenuClicked(menuItem) ?: false
     }
 
@@ -229,6 +329,9 @@ open class Presenter(var activity: Activity) : Application.ActivityLifecycleCall
      * Handle Drawer Menu item
      */
     fun onNavigationItemSelected(item: MenuItem): Boolean {
+        if (showDebugging) {
+            Logger.debug("onNavigationItemSelected ${item}")
+        }
         return currentView?.onNavigationItemSelected(item) ?: false
     }
 
@@ -236,15 +339,52 @@ open class Presenter(var activity: Activity) : Application.ActivityLifecycleCall
     }
 
     override fun onActivityDestroyed(activity: Activity?) {
+        if (showDebugging) {
+            Logger.debug("onActivityDestroyed")
+        }
         currentView?.onDestroy()
     }
 
     override fun onActivityPaused(activity: Activity?) {
+        if (showDebugging) {
+            Logger.debug("onActivityPaused")
+        }
         currentView?.onPause()
     }
 
     override fun onActivityResumed(activity: Activity?) {
-        currentView?.onResume()
+        if (showDebugging) {
+            Logger.debug("onActivityResumed")
+        }
+        if (!resumeCalled) {
+            currentView?.onResume()
+        }
+        resumeCalled = false
+    }
+
+    /**
+     * Find a view that matches the given class. Useful for finding the parent FrameLayout
+     * @param parent
+     * *
+     * @param type
+     * *
+     * @return View
+     */
+    fun findViewByClass(parent: ViewGroup, type: Class<*>): View? {
+        val childCount = parent.childCount
+        for (i in 0..childCount - 1) {
+            val childAt = parent.getChildAt(i)
+            if (childAt != null && childAt.javaClass == type) {
+                return childAt
+            }
+            if (childAt is ViewGroup) {
+                val foundView = findViewByClass(childAt, type)
+                if (foundView != null) {
+                    return foundView
+                }
+            }
+        }
+        return null
     }
 
     override fun onActivitySaveInstanceState(activity: Activity?, outState: Bundle?) {
@@ -260,22 +400,20 @@ open class Presenter(var activity: Activity) : Application.ActivityLifecycleCall
         val VIEWS = "views"
         val LAYOUT_NAME = "layoutName"
         val VIEW_TYPE = "viewType"
-        val FIELD_MODELS = "fieldModels"
-        val FIELD_NAME = "fieldName"
-        val FIELD_TYPE = "fieldType"
-        val MODELS = "models"
-        val CLASS_NAME = "className"
         val VIEW_NAME = "viewName"
-        val MAIN_VIEW = "mainView"
-        val FIRST_VIEW = "firstView"
-
     }
 
     fun onBackPressed(): Boolean {
+        if (showDebugging) {
+            Logger.debug("onBackPressed")
+        }
         return currentView?.onBackPressed() ?: false
     }
 
-    fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (showDebugging) {
+            Logger.debug("onBackPressed ${item}")
+        }
         return currentView?.onOptionsItemSelected(item) ?: false
     }
 

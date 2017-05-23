@@ -1,13 +1,15 @@
 package com.mastertechsoftware.mvpframework
 
+import com.mastertechsoftware.logging.Logger
 import java.util.*
 
 /**
  * Implementation of ScreenManager. Can be replaced
  */
 open class ScreenManagerImpl : ScreenManager {
-    var currentLogic : ScreenLogic? = null
-    val stack = ArrayDeque<ScreenLogic>()
+    protected var currentLogic : ScreenLogic? = null
+    protected val stack = ArrayDeque<ScreenLogic>()
+    protected var showDebugging = true
 
     override fun stackSize(): Int {
         return stack.size
@@ -18,13 +20,19 @@ open class ScreenManagerImpl : ScreenManager {
     }
 
     override fun pop(): ScreenLogic? {
-        currentLogic?.stop()
+        if (showDebugging) {
+            Logger.debug("pop")
+        }
+        currentLogic?.pause()
         val topLogic = popStack()
         currentLogic?.resume()
         return topLogic
     }
 
     private fun popStack() : ScreenLogic?{
+        if (showDebugging) {
+            Logger.debug("popStack")
+        }
         if (stack.isEmpty()) {
             return null
         }
@@ -34,19 +42,32 @@ open class ScreenManagerImpl : ScreenManager {
         } else {
             currentLogic = null
         }
+        if (showDebugging) {
+            Logger.debug("popStack: ${currentLogic}")
+        }
         return topLogic
     }
 
     override fun push(screenLogic: ScreenLogic) {
+        if (showDebugging) {
+            Logger.debug("push ${screenLogic}")
+        }
         currentLogic?.pause()
         screenLogic.setScreenManager(this)
         stack.push(screenLogic)
         currentLogic = screenLogic
-        screenLogic.start()
+        if (!screenLogic.started()) {
+            screenLogic.start()
+        }
+        screenLogic.resume()
     }
 
     override fun replace(screenLogic: ScreenLogic) {
+        if (showDebugging) {
+            Logger.debug("replace ${screenLogic}")
+        }
         screenLogic.setScreenManager(this)
+        currentLogic?.pause()
         currentLogic?.stop()
         popStack()
         currentLogic = screenLogic

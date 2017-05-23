@@ -2,10 +2,8 @@ package com.mastertechsoftware.mvpframework
 
 import android.graphics.Color
 import android.graphics.drawable.Drawable
-import android.support.annotation.DrawableRes
-import android.support.annotation.MenuRes
-import android.support.annotation.Nullable
-import android.support.annotation.StringRes
+import android.support.annotation.*
+import android.support.design.widget.AppBarLayout
 import android.support.design.widget.NavigationView
 import android.support.v4.widget.DrawerLayout
 import android.support.v7.graphics.drawable.DrawerArrowDrawable
@@ -14,13 +12,14 @@ import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 
 
 /**
  * Class for dealing with toolbar
  */
 open class ToolbarManager(val toolbar: Toolbar, val presenter: Presenter, val navigationView: NavigationView,
-                          val drawerLayout: DrawerLayout) :
+                          val drawerLayout: DrawerLayout, val appBarLayout: AppBarLayout) :
         Toolbar.OnMenuItemClickListener, View.OnClickListener, NavigationView.OnNavigationItemSelectedListener {
     var navState = NavState.CLOSED
     var homeState = HomeState.HAMBURGER
@@ -30,13 +29,15 @@ open class ToolbarManager(val toolbar: Toolbar, val presenter: Presenter, val na
         drawerArrowDrawable.color = Color.WHITE
         drawerArrowDrawable.isSpinEnabled = true
         toolbar.setNavigationIcon(drawerArrowDrawable)
-//        toolbar.setNavigationIcon(navigationIcon)
         toolbar.setOnMenuItemClickListener(this)
         navigationView.setNavigationItemSelectedListener(this)
         toolbar.setNavigationOnClickListener(this)
     }
 
     override fun onMenuItemClick(item: MenuItem?): Boolean {
+        if (item == null) {
+            return false
+        }
         return presenter.onMenuClicked(item)
     }
 
@@ -44,8 +45,12 @@ open class ToolbarManager(val toolbar: Toolbar, val presenter: Presenter, val na
         when (homeState) {
             HomeState.HAMBURGER -> {
                 when (navState) {
-                    NavState.CLOSED -> {drawerLayout.openDrawer(Gravity.START); navState = NavState.OPEN}
-                    else -> {drawerLayout.closeDrawer(Gravity.START); navState = NavState.CLOSED}
+                    NavState.CLOSED -> {
+                        openDrawer()
+                    }
+                    else -> {
+                        closeDrawer()
+                    }
                 }
             }
             else -> {
@@ -54,11 +59,45 @@ open class ToolbarManager(val toolbar: Toolbar, val presenter: Presenter, val na
         }
     }
 
+    fun showToolbar(show : Boolean) {
+        appBarLayout.setExpanded(show)
+    }
+
+    fun openDrawer() {
+        drawerLayout.openDrawer(Gravity.START); navState = NavState.OPEN
+    }
+
+    fun closeDrawer() {
+        drawerLayout.closeDrawer(Gravity.START); navState = NavState.CLOSED
+    }
+
+    fun isDrawerOpen() : Boolean {
+        return drawerLayout.isDrawerOpen(navigationView)
+    }
+
+    fun setDrawerBackgroundColor(@ColorRes color : Int) {
+        drawerLayout.setBackgroundColor(color)
+    }
+
+    fun setDrawerStatusBarColor(@ColorRes color : Int) {
+        drawerLayout.setStatusBarBackgroundColor(color)
+    }
+
+    fun showToolbar() {
+        toolbar.animate().translationY(0f).setInterpolator(DecelerateInterpolator()).start()
+    }
+
+    fun lockDrawer() {
+        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+    }
+
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        closeDrawer()
         return presenter.onNavigationItemSelected(item)
     }
 
     fun setNavMenu(@MenuRes menuId: Int) {
+        navigationView.menu?.clear()
         navigationView.inflateMenu(menuId)
     }
 
@@ -94,8 +133,12 @@ open class ToolbarManager(val toolbar: Toolbar, val presenter: Presenter, val na
         toolbar.setTitle(title)
     }
 
-    fun setMenu(@MenuRes menuId: Int) {
+    fun clearMenu() {
         toolbar.menu.clear()
+    }
+
+    fun setMenu(@MenuRes menuId: Int) {
+        clearMenu()
         toolbar.inflateMenu(menuId)
     }
 

@@ -10,15 +10,12 @@ import android.view.ViewGroup
  * Base class for handling Activity
  */
 abstract class MVPActivity : AppCompatActivity() {
-    lateinit var presenter: Presenter
+    lateinit var presenter: Presenter // Must be created by subclasses
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(presenter.getLayout())
         presenter.setLayout(findViewById(R.id.drawer_layout) as ViewGroup)
-//        setSupportActionBar(presenter.toolbarManager.toolbar)
-//        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-//        supportActionBar?.setHomeButtonEnabled(true)
         getScreenManager().start()
     }
 
@@ -30,7 +27,7 @@ abstract class MVPActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        if (!presenter.onOptionsItemSelected(item)) {
+        if (item != null && !presenter.onOptionsItemSelected(item)) {
             return super.onOptionsItemSelected(item)
         }
         return false
@@ -48,6 +45,4 @@ abstract class MVPActivity : AppCompatActivity() {
         }
     }
 
-    companion object {
-    }
 }

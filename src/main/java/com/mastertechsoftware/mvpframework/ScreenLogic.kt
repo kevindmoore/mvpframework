@@ -8,5 +8,7 @@ interface ScreenLogic {
     fun stop()
     fun pause()
     fun resume()
+    fun onReturn()
+    fun started() : Boolean
     fun setScreenManager(screenManager: ScreenManager)
 }
