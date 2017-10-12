@@ -76,11 +76,11 @@ open class ToolbarManager(val toolbar: Toolbar, val presenter: Presenter, val na
     }
 
     fun setDrawerBackgroundColor(@ColorRes color : Int) {
-        drawerLayout.setBackgroundColor(color)
+        drawerLayout.setBackgroundColor(drawerLayout.context.resources.getColor(color))
     }
 
     fun setDrawerStatusBarColor(@ColorRes color : Int) {
-        drawerLayout.setStatusBarBackgroundColor(color)
+        drawerLayout.setStatusBarBackgroundColor(drawerLayout.context.resources.getColor(color))
     }
 
     fun showToolbar() {

@@ -10,14 +10,17 @@ import android.view.ViewGroup
  * Base class for handling Activity
  */
 abstract class MVPActivity : AppCompatActivity() {
-    lateinit var presenter: Presenter // Must be created by subclasses
+    val presenter: Presenter by lazy {
+        Presenter(this)
+    }// Can be created by subclasses
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(presenter.getLayout())
-        presenter.setLayout(findViewById(R.id.drawer_layout) as ViewGroup)
+        presenter.setLayout(findViewById<ViewGroup>(R.id.drawer_layout) as ViewGroup)
         getScreenManager().start()
     }
+
 
     abstract fun getScreenManager() : ScreenManager
 

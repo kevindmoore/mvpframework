@@ -5,7 +5,8 @@ package com.mastertechsoftware.mvpframework
  * NOTE: Must call super.start() to work
  */
 open class AbstractScreenLogic : ScreenLogic {
-    protected var started : Boolean = false
+    var currentScreenManager: ScreenManager? = null
+   protected var started : Boolean = false
 
     override fun start() {
         started = true
@@ -28,5 +29,6 @@ open class AbstractScreenLogic : ScreenLogic {
     }
 
     override fun setScreenManager(screenManager: ScreenManager) {
+        this.currentScreenManager = screenManager
     }
 }

@@ -11,9 +11,6 @@ import android.support.annotation.LayoutRes
 import android.support.annotation.MenuRes
 import android.support.design.widget.AppBarLayout
 import android.support.design.widget.FloatingActionButton
-import android.support.design.widget.NavigationView
-import android.support.v4.widget.DrawerLayout
-import android.support.v7.widget.Toolbar
 import android.view.*
 import android.widget.FrameLayout
 import com.mastertechsoftware.logging.Logger
@@ -64,11 +61,11 @@ open class Presenter(var activity: Activity) : Application.ActivityLifecycleCall
             Logger.debug("setLayout")
         }
         topLevelLayout = topLayout
-        frameLayout = topLayout.findViewById(R.id.frameLayout) as FrameLayout
-        val appBarLayout  = topLayout.findViewById(R.id.appBarLayout) as AppBarLayout
-        toolbarManager = ToolbarManager(topLayout.findViewById(R.id.toolbar) as Toolbar, this,
-                topLayout.findViewById(R.id.nav_view) as NavigationView,
-                topLayout.findViewById(R.id.drawer_layout) as DrawerLayout, appBarLayout)
+        frameLayout = topLayout.findViewById(R.id.frameLayout)
+        val appBarLayout  = topLayout.findViewById<AppBarLayout>(R.id.appBarLayout)
+        toolbarManager = ToolbarManager(topLayout.findViewById(R.id.toolbar), this,
+                topLayout.findViewById(R.id.nav_view),
+                topLayout.findViewById(R.id.drawer_layout), appBarLayout)
     }
 
     fun shutDown() {
@@ -138,25 +135,25 @@ open class Presenter(var activity: Activity) : Application.ActivityLifecycleCall
         if (showDebugging) {
             Logger.debug("showFAB ${show}")
         }
-        topLevelLayout.findViewById(R.id.fab).visibility = if (show) View.VISIBLE else View.GONE
+        topLevelLayout.findViewById<View>(R.id.fab).visibility = if (show) View.VISIBLE else View.GONE
     }
 
     /**
      * Set the drawable for the FAB
      */
     fun setFABDrawable(drawable: Drawable) {
-        (topLevelLayout.findViewById(R.id.fab) as FloatingActionButton).setImageDrawable(drawable)
+        (topLevelLayout.findViewById<FloatingActionButton>(R.id.fab)).setImageDrawable(drawable)
     }
 
     fun setFABDrawable(@DrawableRes id: Int) {
-        (topLevelLayout.findViewById(R.id.fab) as FloatingActionButton).setImageResource(id)
+        (topLevelLayout.findViewById<FloatingActionButton>(R.id.fab)).setImageResource(id)
     }
 
     /**
      * Set the click listener for the fab
      */
     fun setFABOnClickListener(clickListener: (View) -> Unit) {
-        topLevelLayout.findViewById(R.id.fab).setOnClickListener(clickListener)
+        topLevelLayout.findViewById<FloatingActionButton>(R.id.fab).setOnClickListener(clickListener)
     }
 
     /**
